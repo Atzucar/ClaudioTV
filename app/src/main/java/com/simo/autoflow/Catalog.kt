@@ -43,17 +43,25 @@ object Catalog {
         }
     }
 
-    private fun parseJson(text: String): List<Item> {
+        private fun parseJson(text: String): List<Item> {
         val arr = JSONArray(text)
         val items = mutableListOf<Item>()
         for (i in 0 until arr.length()) {
             val o = arr.getJSONObject(i)
-            if (!o.has("links")) continue
-            val ls = o.getJSONArray("links")
+            
+            # CORRECCIÓN DE SEGURIDAD: Busca "links" o "channels" para que nunca devuelva una lista vacía
+            val key = when {
+                o.has("links") -> "links"
+                o.has("channels") -> "channels"
+                else -> null
+            }
+            if (key == null) continue
+            
+            val ls = o.getJSONArray(key)
             val linkList = (0 until ls.length()).map {
                 val l = ls.getJSONObject(it)
                 Link(
-                    l.getString("name"),
+                    l.optString("name", "Canal ${it + 1}"),
                     l.getString("url"),
                     l.optString("quality", null),
                     if (l.has("peers")) l.optInt("peers") else null
@@ -70,4 +78,4 @@ object Catalog {
         }
         return items
     }
-}
+
