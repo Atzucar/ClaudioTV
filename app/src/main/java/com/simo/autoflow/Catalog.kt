@@ -1,15 +1,73 @@
 package com.simo.autoflow
 
-object Config {
-    const val PROTON_PKG = "ch.protonvpn.android"
+import android.content.Context
+import org.json.JSONArray
+import java.net.HttpURLConnection
+import java.net.URL
 
-    val COUNTRY_TEXTS = listOf("Russia", "Rusia")
-    val CONNECT_TEXTS = listOf("Connect", "Conectar", "Quick Connect")
-    val CONNECTED_TEXTS = listOf("Disconnect", "Desconectar", "Connected", "Conectado")
+data class Link(val name: String, val url: String, val quality: String?, val peers: Int?)
+data class Item(val title: String, val type: String, val time: String?, val links: List<Link>)
+data class CatalogResult(val items: List<Item>, val warning: String?, val source: String)
 
-    // ESTA ES LA RUTA CRÍTICA: Cambia tu URL para que la APK busque tu archivo catalog.json en internet
-    const val CATALOG_URL = "https://githubusercontent.com"
+object Catalog {
+    fun load(ctx: Context): CatalogResult {
+        fun bundled() = try {
+            parseJson(ctx.assets.open("catalog.json").bufferedReader().readText())
+        } catch (e: Exception) {
+            emptyList()
+        }
 
-    const val STEP_TIMEOUT_MS = 20_000L
-    const val VPN_TIMEOUT_MS = 60_000L
+        if (Config.CATALOG_URL.isBlank()) {
+            return CatalogResult(bundled(), "No hay CATALOG_URL configurada.", "ejemplo")
+        }
+
+        return try {
+            val conn = URL(Config.CATALOG_URL + "?t=" + System.currentTimeMillis()).openConnection() as HttpURLConnection
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+            conn.useCaches = false
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Android TV) Gecko/120.0")
+            
+            if (conn.responseCode != 200) error("HTTP ${conn.responseCode}")
+            
+            val rawText = conn.inputStream.bufferedReader().use { it.readText() }
+            val itemsList = parseJson(rawText)
+            
+            if (itemsList.isEmpty()) {
+                CatalogResult(bundled(), "El archivo online no contiene eventos válidos.", "online")
+            } else {
+                CatalogResult(itemsList, null, "online")
+            }
+        } catch (e: Exception) {
+            CatalogResult(bundled(), "Error de red: ${e.message}", "ejemplo")
+        }
+    }
+
+    private fun parseJson(text: String): List<Item> {
+        val arr = JSONArray(text)
+        val items = mutableListOf<Item>()
+        for (i in 0 until arr.length()) {
+            val o = arr.getJSONObject(i)
+            if (!o.has("links")) continue
+            val ls = o.getJSONArray("links")
+            val linkList = (0 until ls.length()).map {
+                val l = ls.getJSONObject(it)
+                Link(
+                    l.getString("name"),
+                    l.getString("url"),
+                    l.optString("quality", null),
+                    if (l.has("peers")) l.optInt("peers") else null
+                )
+            }
+            items.add(
+                Item(
+                    o.getString("title"),
+                    if (o.optString("type", "evento").lowercase().startsWith("pel")) "pelicula" else "evento",
+                    o.optString("time", null),
+                    linkList
+                )
+            )
+        }
+        return items
+    }
 }
