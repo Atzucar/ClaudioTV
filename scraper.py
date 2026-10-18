@@ -4,26 +4,46 @@ import json
 import re
 import time
 
-# Usamos el espejo activo principal y estable de LiveTV
-BASE_URL = "https://livetv905.me" 
+# Usamos una lista de espejos alternativos por si el principal se cae
+DOMAINS = ["https://livetv905.me", "https://livetv.sx", "https://livetv744.me"]
+
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept-Language": "es-ES,es;q=0.9"
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+    "Cache-Control": "max-age=0",
+    "Connection": "keep-alive"
 }
 
 def clean_text(text):
     return " ".join(text.split()) if text else ""
 
 def main():
-    print("Iniciando raspado con mapeo compatible para la App...")
-    try:
-        response = requests.get(f"{BASE_URL}/es/allupcoming/", headers=HEADERS, timeout=20)
-    except Exception as e:
-        print(f"Error de red crítico con el servidor espejo: {e}")
-        return
+    print("Iniciando raspado con simulación de navegación real...")
+    
+    response = None
+    active_base = ""
+    
+    # Probar los espejos disponibles hasta que uno responda con éxito
+    for domain in DOMAINS:
+        try:
+            print(f"Probando conexión con: {domain}")
+            res = requests.get(f"{domain}/es/allupcoming/", headers=HEADERS, timeout=15)
+            if res.status_code == 200 and "eventinfo" in res.text:
+                response = res
+                active_base = domain
+                print(f"¡Conexión establecida con éxito en {domain}!")
+                break
+        except Exception as e:
+            print(f"Espejo no disponible: {e}")
+            continue
 
-    if response.status_code != 200:
-        print(f"LiveTV denegó el acceso. Código: {response.status_code}")
+    if not response:
+        print("Error crítico: Todos los servidores espejo de LiveTV están caídos o bloqueados.")
+        # Generar un catálogo limpio de prueba para que la app no se rompa en el FireStick
+        backup = [{"id":"0","title":"Comprobando servidor... Inténtalo de nuevo","time":"00:00","type":"EVENTO","category":"Sistema","links":[]}]
+        with open("catalog.json", "w", encoding="utf-8") as f:
+            json.dump(backup, f, ensure_ascii=False, indent=4)
         return
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -34,7 +54,7 @@ def main():
 
     for elem in event_elements:
         href = elem['href']
-        event_url = f"{BASE_URL}{href}"
+        event_url = f"{active_base}{href}"
         
         if event_url in processed_urls:
             continue
@@ -44,7 +64,7 @@ def main():
         if not title or "vs" not in title.lower() and "–" not in title:
             continue
 
-        print(f"-> Procesando partido: {title}")
+        print(f"-> Cargando partido: {title}")
         
         time_text = "20:45"
         parent_row = elem.find_parent(['tr', 'td', 'div'])
@@ -53,11 +73,10 @@ def main():
             if time_elem:
                 time_text = clean_text(time_elem.text)
 
-        # Usamos la estructura nativa exacta que tu Activity lee
         links_list = []
         try:
-            time.sleep(1.5)
-            event_resp = requests.get(event_url, headers=HEADERS, timeout=12)
+            time.sleep(2.0) # Delay para evitar que Cloudflare sospeche del bot
+            event_resp = requests.get(event_url, headers=HEADERS, timeout=10)
             event_soup = BeautifulSoup(event_resp.text, 'html.parser')
             
             canal_index = 1
@@ -76,38 +95,35 @@ def main():
                     row_text = a_tag.find_parent().text.lower() if a_tag.find_parent() else ""
                     quality = "HD" if "hd" in row_text or "kbps" in row_text else "SD"
                     
-                    # REQUISITO CLAVE: Nombre de campos idénticos a los del Gist (links, name, url, quality, peers)
                     links_list.append({
                         "name": f"Canal {canal_index}",
                         "url": stream_url,
                         "quality": quality,
-                        "peers": "120" # Si la app procesa los pares como entero o texto simple
+                        "peers": "120"
                     })
                     canal_index += 1
                         
         except Exception as e:
-            print(f"Aviso: Salto de evento: {e}")
+            print(f"Salto de sub-enlace: {e}")
             continue
 
         if links_list:
-            # Estructura del objeto principal coincidente con tu Gist de CATALOG_URL
             catalog.append({
                 "id": href.split('/')[-2],
                 "title": title,
                 "time": time_text,
                 "type": "EVENTO",
                 "category": "Deportes en Directo",
-                "links": links_list # Cambiado de 'channels' a 'links' para tu App
+                "links": links_list
             })
 
-        if len(catalog) >= 15:
+        if len(catalog) >= 12:
             break
 
-    # Escribir el JSON definitivo
     with open("catalog.json", "w", encoding="utf-8") as f:
         json.dump(catalog, f, ensure_ascii=False, indent=4)
         
-    print(f"Proceso finalizado. Guardado con {len(catalog)} partidos.")
+    print(f"Catálogo finalizado. Sincronizados {len(catalog)} partidos activos.")
 
 if __name__ == "__main__":
     main()
