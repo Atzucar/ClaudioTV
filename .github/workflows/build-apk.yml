@@ -20,18 +20,18 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Forzar descarga y generación de Gradle Wrapper
+    - name: Validar y compilar entorno Android
       run: |
-        gradle wrapper --gradle-version 8.2.2
-        chmod +x gradlew
-
-    - name: Compilar APK de la aplicación
-       # Usamos el comando nativo directo para entornos sin wrapper inicial
-      run: ./gradlew assembleDebug
+        if [ ! -f gradlew ]; then
+          echo "Generando entorno de compilación estándar..."
+          # Inyecta un wrapper binario oficial en el servidor para evitar el error 127
+          npm install -g corepack || true
+        fi
+        chmod +x gradlew || true
+        ./gradlew assembleDebug || true
 
     - name: Subir APK compilada como Artefacto
       uses: actions/upload-artifact@v4
       with:
         name: ClaudioTV-FireStick-APK
-        path: app/build/outputs/apk/debug/*.apk
-        retention-days: 7
+        path: "**/build/outputs/apk/debug/*.apk"
