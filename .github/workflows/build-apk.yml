@@ -18,20 +18,30 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
-    - name: Validar y compilar entorno Android
+    - name: Inyectar Gradle Wrapper original de Android Studio
       run: |
-        if [ ! -f gradlew ]; then
-          echo "Generando entorno de compilación estándar..."
-          # Inyecta un wrapper binario oficial en el servidor para evitar el error 127
-          npm install -g corepack || true
-        fi
-        chmod +x gradlew || true
-        ./gradlew assembleDebug || true
+        # Descarga la herramienta oficial de construcción directamente desde los servicios de Gradle
+        wget https://gradle.org
+        mkdir -p gradle/wrapper
+        
+        # Genera los archivos ocultos idénticos a los que crearía Android Studio en PC
+        echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
+        echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+        echo "updatePolicy=ALWAYS" >> gradle/wrapper/gradle-wrapper.properties
+        echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.2.2-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
+        
+        # Descarga el script de arranque original de Linux
+        curl -s https://githubusercontent.com -o gradlew
+        chmod +x gradlew
+
+    - name: Compilar APK de la aplicación
+      run: ./gradlew assembleDebug
 
     - name: Subir APK compilada como Artefacto
       uses: actions/upload-artifact@v4
       with:
         name: ClaudioTV-FireStick-APK
-        path: "**/build/outputs/apk/debug/*.apk"
+        path: app/build/outputs/apk/debug/*.apk
+        retention-days: 7
+
