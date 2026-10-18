@@ -88,7 +88,7 @@ class MainActivity : Activity() {
                 }
                 Session.items = r.items
                 warn.text = r.warning ?: ""; warn.visibility = if (r.warning == null) View.GONE else View.VISIBLE
-                updated.text = "Actualizado a las " + SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+                updated.text = "Actualizado ${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())} · ${r.items.size} eventos · ${r.source}"
                 buildList(focusFirst = firstLoad); firstLoad = false
             }
         }
