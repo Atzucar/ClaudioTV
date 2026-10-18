@@ -1,0 +1,40 @@
+name: Actualizar Catálogo LiveTV Scraper
+
+on:
+  schedule:
+    # Se ejecuta de forma automática cada 30 minutos
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Permite que puedas pulsar un botón para probarlo manualmente cuando quieras
+
+permissions:
+  contents: write # Permiso obligatorio para que el servidor pueda guardar el catálogo generado
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clonar repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Instalar dependencias de raspado
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+
+    - name: Ejecutar LiveTV Scraper
+      run: |
+        python scraper.py
+
+    - name: Subir cambios al repositorio
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@://github.com"
+        
+        git add catalog.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Catálogo LiveTV actualizado automáticamente" && git push)
