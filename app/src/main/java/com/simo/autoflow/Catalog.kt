@@ -43,13 +43,13 @@ object Catalog {
         }
     }
 
-        private fun parseJson(text: String): List<Item> {
+    private fun parseJson(text: String): List<Item> {
         val arr = JSONArray(text)
         val items = mutableListOf<Item>()
         for (i in 0 until arr.length()) {
             val o = arr.getJSONObject(i)
             
-            # CORRECCIÓN DE SEGURIDAD: Busca "links" o "channels" para que nunca devuelva una lista vacía
+            // Busca de forma elástica tanto "links" como "channels"
             val key = when {
                 o.has("links") -> "links"
                 o.has("channels") -> "channels"
@@ -78,4 +78,6 @@ object Catalog {
         }
         return items
     }
+}
+
 
