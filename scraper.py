@@ -4,46 +4,26 @@ import json
 import re
 import time
 
-# Usamos una lista de espejos alternativos por si el principal se cae
-DOMAINS = ["https://livetv905.me", "https://livetv.sx", "https://livetv744.me"]
-
+# Usamos el espejo activo principal y estable de LiveTV
+BASE_URL = "https://livetv905.me" 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
-    "Cache-Control": "max-age=0",
-    "Connection": "keep-alive"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept-Language": "es-ES,es;q=0.9"
 }
 
 def clean_text(text):
     return " ".join(text.split()) if text else ""
 
 def main():
-    print("Iniciando raspado con simulación de navegación real...")
-    
-    response = None
-    active_base = ""
-    
-    # Probar los espejos disponibles hasta que uno responda con éxito
-    for domain in DOMAINS:
-        try:
-            print(f"Probando conexión con: {domain}")
-            res = requests.get(f"{domain}/es/allupcoming/", headers=HEADERS, timeout=15)
-            if res.status_code == 200 and "eventinfo" in res.text:
-                response = res
-                active_base = domain
-                print(f"¡Conexión establecida con éxito en {domain}!")
-                break
-        except Exception as e:
-            print(f"Espejo no disponible: {e}")
-            continue
+    print("Iniciando raspado con pares en formato numérico...")
+    try:
+        response = requests.get(f"{BASE_URL}/es/allupcoming/", headers=HEADERS, timeout=20)
+    except Exception as e:
+        print(f"Error de red crítico con el servidor espejo: {e}")
+        return
 
-    if not response:
-        print("Error crítico: Todos los servidores espejo de LiveTV están caídos o bloqueados.")
-        # Generar un catálogo limpio de prueba para que la app no se rompa en el FireStick
-        backup = [{"id":"0","title":"Comprobando servidor... Inténtalo de nuevo","time":"00:00","type":"EVENTO","category":"Sistema","links":[]}]
-        with open("catalog.json", "w", encoding="utf-8") as f:
-            json.dump(backup, f, ensure_ascii=False, indent=4)
+    if response.status_code != 200:
+        print(f"LiveTV denegó el acceso. Código: {response.status_code}")
         return
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -54,7 +34,7 @@ def main():
 
     for elem in event_elements:
         href = elem['href']
-        event_url = f"{active_base}{href}"
+        event_url = f"{BASE_URL}{href}"
         
         if event_url in processed_urls:
             continue
@@ -64,7 +44,7 @@ def main():
         if not title or "vs" not in title.lower() and "–" not in title:
             continue
 
-        print(f"-> Cargando partido: {title}")
+        print(f"-> Procesando partido: {title}")
         
         time_text = "20:45"
         parent_row = elem.find_parent(['tr', 'td', 'div'])
@@ -75,8 +55,8 @@ def main():
 
         links_list = []
         try:
-            time.sleep(2.0) # Delay para evitar que Cloudflare sospeche del bot
-            event_resp = requests.get(event_url, headers=HEADERS, timeout=10)
+            time.sleep(1.5)
+            event_resp = requests.get(event_url, headers=HEADERS, timeout=12)
             event_soup = BeautifulSoup(event_resp.text, 'html.parser')
             
             canal_index = 1
@@ -95,16 +75,17 @@ def main():
                     row_text = a_tag.find_parent().text.lower() if a_tag.find_parent() else ""
                     quality = "HD" if "hd" in row_text or "kbps" in row_text else "SD"
                     
+                    # REQUISITO CLAVE DE TU CATALOG.KT: 'peers' debe ser un número entero (Int), NO texto ("120")
                     links_list.append({
                         "name": f"Canal {canal_index}",
                         "url": stream_url,
                         "quality": quality,
-                        "peers": "120"
+                        "peers": 120  # Inyectado como un entero puro para que optInt() no falle
                     })
                     canal_index += 1
                         
         except Exception as e:
-            print(f"Salto de sub-enlace: {e}")
+            print(f"Aviso: Salto de evento: {e}")
             continue
 
         if links_list:
@@ -112,18 +93,18 @@ def main():
                 "id": href.split('/')[-2],
                 "title": title,
                 "time": time_text,
-                "type": "EVENTO",
+                "type": "evento",
                 "category": "Deportes en Directo",
                 "links": links_list
             })
 
-        if len(catalog) >= 12:
+        if len(catalog) >= 15:
             break
 
     with open("catalog.json", "w", encoding="utf-8") as f:
         json.dump(catalog, f, ensure_ascii=False, indent=4)
         
-    print(f"Catálogo finalizado. Sincronizados {len(catalog)} partidos activos.")
+    print(f"Proceso finalizado. Guardado con {len(catalog)} partidos activos.")
 
 if __name__ == "__main__":
     main()
