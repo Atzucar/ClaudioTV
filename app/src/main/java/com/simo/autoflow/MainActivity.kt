@@ -16,7 +16,7 @@ import kotlin.concurrent.thread
 
 object Session { var items: List<Item> = emptyList() }
 
-/** Pantalla 1: que quieres ver, con filtros Todo / Eventos / Peliculas. */
+/** Pantalla 1: qué quieres ver, con filtros Todo / Eventos / Películas. */
 class MainActivity : Activity() {
     private lateinit var list: LinearLayout
     private lateinit var chipsRow: LinearLayout
@@ -32,15 +32,24 @@ class MainActivity : Activity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         val c = this
-        val root = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Ui.BG); setPadding(Ui.dp(c, 48), Ui.dp(c, 32), Ui.dp(c, 48), Ui.dp(c, 24)) }
+        val root = LinearLayout(c).apply { 
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Ui.BG)
+            setPadding(Ui.dp(c, 48), Ui.dp(c, 32), Ui.dp(c, 48), Ui.dp(c, 24)) 
+        }
 
         // cabecera
         val header = LinearLayout(c).apply { gravity = Gravity.CENTER_VERTICAL }
-        header.addView(Ui.tv(c, "▶", 14f, Ui.WHITE, true).apply { gravity = Gravity.CENTER; background = Ui.rounded(c, Ui.ACCENT, 8) }, Ui.lp(Ui.dp(c, 28), Ui.dp(c, 28), r = Ui.dp(c, 10)))
+        header.addView(Ui.tv(c, "▶", 14f, Ui.WHITE, true).apply { 
+            gravity = Gravity.CENTER
+            background = Ui.rounded(c, Ui.ACCENT, 8) 
+        }, Ui.lp(Ui.dp(c, 28), Ui.dp(c, 28), r = Ui.dp(c, 10)))
+        
         header.addView(Ui.tv(c, "Auto Flow", 15f, Ui.TEXT, true), Ui.lp(0, -2, 1f))
         vpnChip = Ui.pill(c, "", Ui.CHIP, Ui.SOFT)
         accChip = Ui.pill(c, "", Ui.CHIP, Ui.SOFT)
         updated = Ui.tv(c, "", 12f, Ui.MUTED)
+        
         header.addView(updated, Ui.lp(-2, -2, r = Ui.dp(c, 12)))
         header.addView(filterChip(c, "↻ Recargar", false) { refresh() }, Ui.lp(-2, -2, r = Ui.dp(c, 8)))
         header.addView(vpnChip, Ui.lp(-2, -2, r = Ui.dp(c, 8)))
@@ -58,7 +67,12 @@ class MainActivity : Activity() {
         val content = LinearLayout(c)
         list = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL }
         content.addView(ScrollView(c).apply { isFillViewport = true; addView(list) }, Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f, r = Ui.dp(c, 28)))
-        val panel = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; setPadding(Ui.dp(c, 20), Ui.dp(c, 20), Ui.dp(c, 20), Ui.dp(c, 20)); background = Ui.rounded(c, Ui.CARD, 14) }
+        
+        val panel = LinearLayout(c).apply { 
+            orientation = LinearLayout.VERTICAL
+            setPadding(Ui.dp(c, 20), Ui.dp(c, 20), Ui.dp(c, 20), Ui.dp(c, 20))
+            background = Ui.rounded(c, Ui.CARD, 14) 
+        }
         pTitle = Ui.tv(c, "", 20f, Ui.TEXT, true)
         pCount = Ui.tv(c, "", 13f, Ui.SOFT)
         panel.addView(Ui.tv(c, "SELECCIONADO", 11f, Ui.MUTED))
@@ -116,16 +130,28 @@ class MainActivity : Activity() {
 
     private fun buildList(focusFirst: Boolean) {
         list.removeAllViews()
-        val shown = Session.items.withIndex().filter { filter == "all" || it.value.type == filter }
+        
+        // CORRECCIÓN: Filtra de manera elástica ignorando mayúsculas y minúsculas
+        val shown = Session.items.withIndex().filter { 
+            filter == "all" || it.value.type.lowercase().contains(filter.lowercase()) || it.value.type.isBlank()
+        }
+        
         if (shown.isEmpty()) { pTitle.text = "Sin contenido"; pCount.text = ""; return }
         shown.forEachIndexed { n, (idx, item) ->
-            val row = FocusRow(this, item.type.uppercase(), item.title, null, item.time) {
+            // Aseguramos que si item.type está vacío pinte "EVENTO" por defecto en la caja gris
+            val displayType = if (item.type.isNullOrBlank()) "EVENTO" else item.type.uppercase()
+            
+            val row = FocusRow(this, displayType, item.title, null, item.time) {
                 pTitle.text = item.title
                 pCount.text = "${item.links.size} enlace" + if (item.links.size == 1) "" else "s disponibles"
             }
             row.setOnClickListener { startActivity(Intent(this, LinksActivity::class.java).putExtra("i", idx)) }
             list.addView(row, Ui.lp(-1, -2, b = Ui.dp(this, 8)))
-            if (n == 0) { pTitle.text = item.title; pCount.text = "${item.links.size} enlaces"; if (focusFirst) row.requestFocus() }
+            if (n == 0) { 
+                pTitle.text = item.title
+                pCount.text = "${item.links.size} enlaces"
+                if (focusFirst) row.requestFocus() 
+            }
         }
     }
 }
