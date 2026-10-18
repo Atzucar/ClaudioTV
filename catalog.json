@@ -159,27 +159,6 @@
         ]
     },
     {
-        "id": "492416191_maxline_neman",
-        "title": "Maxline – Neman",
-        "time": "20:45",
-        "type": "EVENTO",
-        "category": "Deportes en Directo",
-        "links": [
-            {
-                "name": "Canal 1",
-                "url": "acestream://3e1f6de8444abb15efeadb97952d6324e5b6ed9f",
-                "quality": "SD",
-                "peers": "120"
-            },
-            {
-                "name": "Canal 2",
-                "url": "acestream://9a2aad5b2b4294e07021bdd58b1ca5de3a2c4040",
-                "quality": "SD",
-                "peers": "120"
-            }
-        ]
-    },
-    {
         "id": "536128198_philadelphia_eagles_carolina_panthers",
         "title": "Philadelphia Eagles – Carolina Panthers",
         "time": "20:45",
@@ -306,6 +285,63 @@
             {
                 "name": "Canal 1",
                 "url": "acestream://b6baa046075d82da300fc1b16de96067a8b9540e",
+                "quality": "SD",
+                "peers": "120"
+            }
+        ]
+    },
+    {
+        "id": "492809476__",
+        "title": "Real Madrid – Sevilla",
+        "time": "20:45",
+        "type": "EVENTO",
+        "category": "Deportes en Directo",
+        "links": [
+            {
+                "name": "Canal 1",
+                "url": "acestream://d5b2c6b940cf3df5e8f9dc6f000f0ea23a10b151",
+                "quality": "SD",
+                "peers": "120"
+            },
+            {
+                "name": "Canal 2",
+                "url": "acestream://36cad67fed5a739757a9db844a551aa845a8d51b",
+                "quality": "SD",
+                "peers": "120"
+            },
+            {
+                "name": "Canal 3",
+                "url": "acestream://3e1f6de8444abb15efeadb97952d6324e5b6ed9f",
+                "quality": "SD",
+                "peers": "120"
+            },
+            {
+                "name": "Canal 4",
+                "url": "acestream://a203f6b935a8ad8659c4c76c1d9c13afa6368ef2",
+                "quality": "SD",
+                "peers": "120"
+            },
+            {
+                "name": "Canal 5",
+                "url": "acestream://ffbf8c687c788d9a1a7c651e24802ee773ff3f04",
+                "quality": "SD",
+                "peers": "120"
+            },
+            {
+                "name": "Canal 6",
+                "url": "acestream://8dc603264e8df30fa1dec9a313e606f46582ef25",
+                "quality": "SD",
+                "peers": "120"
+            },
+            {
+                "name": "Canal 7",
+                "url": "acestream://9a2aad5b2b4294e07021bdd58b1ca5de3a2c4040",
+                "quality": "SD",
+                "peers": "120"
+            },
+            {
+                "name": "Canal 8",
+                "url": "acestream://fcd7621df513f600652b4813d5d8fd1daed60058",
                 "quality": "SD",
                 "peers": "120"
             }
