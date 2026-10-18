@@ -2,8 +2,8 @@ name: Compilar APK ClaudioTV
 
 on:
   push:
-    branches: [ "main" ] # Se activa automáticamente cada vez que guardas un archivo
-  workflow_dispatch: # Te permite compilarla manualmente con un botón
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,13 +20,14 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Otorgar permisos de ejecución a Gradle
-      run: chmod +x gradlew
-      continue-on-error: true
+    - name: Forzar descarga y generación de Gradle Wrapper
+      run: |
+        gradle wrapper --gradle-version 8.2.2
+        chmod +x gradlew
 
     - name: Compilar APK de la aplicación
+       # Usamos el comando nativo directo para entornos sin wrapper inicial
       run: ./gradlew assembleDebug
-      continue-on-error: true
 
     - name: Subir APK compilada como Artefacto
       uses: actions/upload-artifact@v4
