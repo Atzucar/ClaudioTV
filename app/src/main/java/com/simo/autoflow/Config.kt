@@ -11,7 +11,7 @@ object Config {
     val CONNECTED_TEXTS = listOf("Disconnect", "Desconectar", "Connected", "Conectado")
 
     // Catalogo: URL de un JSON (ver assets/catalog.json). Vacio = usa el catalogo incluido en la app.
-    const val CATALOG_URL = "https://gist.githubusercontent.com"
+    const val CATALOG_URL = "https://githubusercontent.com"
 
     const val STEP_TIMEOUT_MS = 20_000L
     const val VPN_TIMEOUT_MS = 60_000L
