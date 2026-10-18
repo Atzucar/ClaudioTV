@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Equipo A vs Equipo B",
+    "type": "evento",
+    "time": "20:45",
+    "links": [
+      { "name": "Canal 1", "url": "acestream://PON_AQUI_EL_HASH_1", "quality": "HD", "peers": 320 },
+      { "name": "Canal 2", "url": "acestream://PON_AQUI_EL_HASH_2", "quality": "SD", "peers": 145 }
+    ]
+  },
+  {
+    "title": "Equipo C vs Equipo D",
+    "type": "evento",
+    "time": "22:00",
+    "links": [
+      { "name": "Canal 1", "url": "acestream://PON_AQUI_EL_HASH_3", "quality": "HD" }
+    ]
+  },
+  {
+    "title": "Titulo de pelicula de ejemplo",
+    "type": "pelicula",
+    "time": "2 h 04",
+    "links": [
+      { "name": "Fuente 1", "url": "acestream://PON_AQUI_EL_HASH_4", "quality": "HD" }
+    ]
+  }
+]
